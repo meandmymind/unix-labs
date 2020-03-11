@@ -23,7 +23,7 @@ function find_output_name {
 
     # Find the first occurence of pattern in src file
     matched_lines=$(
-        grep --no-filename --only-matching --extended-regexp $full_regex filename
+        grep --no-filename --only-matching --extended-regexp $full_regex "$filename"
     )
     first_match_only=$(echo "$matched_lines" | head -1)
 
@@ -52,8 +52,8 @@ function clean_up_and_exit() {
 
 function main() {
     # Ensure stop signals are correctly handled
-    temp_dir=$(mktemp -d)
-    trap "clean_up_and_exit $temp_dir $OK" SIGINT SIGTERM SIGKILL
+    temp_dir="$(mktemp -d)"
+    trap "clean_up_and_exit "$temp_dir" $OK" SIGINT SIGTERM SIGKILL
 
     # Define constants
     src_file="$1" 
@@ -67,10 +67,11 @@ function main() {
         echo "Failed to parse output name." >&2
         exit $OUTPUT_NAME_NOT_FOUND
     fi
-    output_file="$src_dir/$output_name"
+
+    output_file="$output_name"
 
     # Copy src to temp_dir
-    temp_src_file="$temp_dir/$src_file"
+    temp_src_file="$temp_dir/$src_basename"
     temp_output_file="$temp_dir/$output_name"
     cp "$src_file" "$temp_src_file"
 
