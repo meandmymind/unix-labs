@@ -6,6 +6,57 @@ OK=0
 BAD_ARGUMENTS=1
 COMPILER_NOT_FOUND=2
 OUTPUT_NAME_NOT_FOUND=3
+BAD_OUTPUT_NAME=4
+
+
+function check_compiler_exists() {
+    # Check that compiler exists
+    which rustc > /dev/null  # Don't write to stdout 
+    
+    if [ $? -eq 1 ]
+    then
+        echo "rustc compiler not found"
+        exit $COMPILER_NOT_FOUND
+    fi
+}
+
+
+function check_input_file() {
+    # Surround with quotes, as filename can have whitespaces in it. How convenient.
+    filename="$1"
+
+    if [ ! -f "$filename" ] 
+    then
+        echo "First arg must be valid path to a source code file." >&2
+        exit $BAD_ARG
+
+    elif [ ! -r "$filename" ]
+    then
+        echo "Source code file must be readable." >&2
+        exit $BAD_ARG
+
+    elif [ ! -w $(dirname "$filename") ]
+    then
+        echo "Source code directory must be writable." >&2
+        exit $BAD_ARG    
+    fi
+}
+
+function check_output_name {
+    output_name=$1
+    if [ -z "$output_name" ]
+    then
+        echo "Failed to parse output name." >&2
+        exit $OUTPUT_NAME_NOT_FOUND
+    fi
+
+    # String's size check
+    size=$(echo "${#key}")
+    if [ $size -gt 255 ];
+       then echo "Ouput name size is bigger than 255 characters." >&2
+       exit $BAD_OUTPUT_NAME
+    fi
+}
 
 
 function find_output_name {
@@ -15,11 +66,11 @@ function find_output_name {
     output_keyword="output:"
     whitespace_before_filename="[[:space:]]*"
     output_filename="([^[:space:]]+)"  # 1+ non-whitespace characters
-    whitespace_after_filename="[[:space:]]*$"  # till the end of line
+    whitespace_after_filename='[[:space:]]*$'  # till the end of line
 
     # Combine parts of regex
     full_regex=$comment_sign_before_payload$output_keyword$whitespace_before_filename
-    full_regex=$full_regex$output_filename$whitespace_before_filename
+    full_regex=$full_regex$output_filename$whitespace_after_filename
 
     # Find the first occurence of pattern in src file
     matched_lines=$(
@@ -61,12 +112,8 @@ function main() {
     src_basename="$(basename $src_file)"
 
     # Parse src file and find output filename
-    output_name=$(find_output_name "$src_file")
-    if [ -z "$output_name" ]
-    then
-        echo "Failed to parse output name." >&2
-        exit $OUTPUT_NAME_NOT_FOUND
-    fi
+    output_name="$(find_output_name "$src_file")"
+    check_output_name $output_name
 
     output_file="$output_name"
 
@@ -93,38 +140,6 @@ function main() {
 }
 
 
-function check_compiler_exists() {
-    # Check that compiler exists
-    which rustc > /dev/null  # Don't write to stdout 
-    
-    if [ $? -eq 1 ]
-    then
-        echo "rustc compiler not found"
-        exit $COMPILER_NOT_FOUND
-    fi
-}
-
-
-function check_input_file() {
-    # Surround with quotes, as filename can have whitespaces in it. How convenient.
-    filename="$1"
-
-    if [ ! -f "$filename" ] 
-    then
-        echo "First arg must be valid path to a source code file." >&2
-        exit $BAD_ARG
-
-    elif [ ! -r "$filename" ]
-    then
-        echo "Source code file must be readable." >&2
-        exit $BAD_ARG
-
-    elif [ ! -w $(dirname "$filename") ]
-    then
-        echo "Source code directory must be writable." >&2
-        exit $BAD_ARG    
-    fi
-}
 
 
 # Check arguments

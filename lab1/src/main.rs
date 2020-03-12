@@ -1,5 +1,7 @@
 fn main() {
-	// output: hello
+    // output: i mean, hello!
+    // output: hello
 
-	println!("{:?}", "Hello, world!");
+    // output: hello.?%#%1244+#Rr=.....//>!!!2r!@)#!%((_))
+    println!("{:?}", "Hello, world!");
 }
